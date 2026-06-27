@@ -1,6 +1,7 @@
 .PHONY: build release test vet check
 
 GOCACHE ?= /tmp/contextq-server-go-cache
+GOMODCACHE ?= $(shell go env GOMODCACHE)
 DIST ?= dist
 TARGET_GOOS ?= linux
 TARGET_GOARCH ?= $(shell go env GOARCH)
@@ -8,7 +9,7 @@ HOST_GOOS := $(shell go env GOOS)
 HOST_GOARCH := $(shell go env GOARCH)
 REMOTE_DIST := $(DIST)/$(TARGET_GOOS)-$(TARGET_GOARCH)
 CONTEXTQ_VERSION ?= $(shell cat CONTEXTQ_VERSION)
-CONTEXTQ_PACKAGE := github.com/norlinga/contextq/cmd/contextq@$(CONTEXTQ_VERSION)
+CONTEXTQ_MODULE := github.com/norlinga/contextq
 CONTEXTQ_SOURCE ?=
 RELEASE_GCFLAGS ?= all=-l
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -26,10 +27,11 @@ release:
 	mkdir -p $(REMOTE_DIST)
 	CGO_ENABLED=0 GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) GOCACHE=$(GOCACHE) go build -buildvcs=false -trimpath -gcflags='$(RELEASE_GCFLAGS)' -ldflags='$(RELEASE_LDFLAGS)' -o $(DIST)/contextq-server ./cmd/contextq-server
 	CGO_ENABLED=0 GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOCACHE=$(GOCACHE) go build -buildvcs=false -trimpath -gcflags='$(RELEASE_GCFLAGS)' -ldflags='$(RELEASE_LDFLAGS)' -o $(REMOTE_DIST)/contextq-server ./cmd/contextq-server
-	@if [ -n "$(CONTEXTQ_SOURCE)" ]; then \
+	@set -eu; if [ -n "$(CONTEXTQ_SOURCE)" ]; then \
 		cd "$(CONTEXTQ_SOURCE)" && CGO_ENABLED=0 GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOCACHE=$(GOCACHE) go build -buildvcs=false -trimpath -gcflags='$(RELEASE_GCFLAGS)' -ldflags='-s -w -buildid=' -o $(abspath $(REMOTE_DIST))/contextq ./cmd/contextq; \
 	else \
-		CGO_ENABLED=0 GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOCACHE=$(GOCACHE) GOBIN=$(abspath $(REMOTE_DIST)) go install -trimpath -gcflags='$(RELEASE_GCFLAGS)' -ldflags='-s -w -buildid=' $(CONTEXTQ_PACKAGE); \
+		GOMODCACHE=$(GOMODCACHE) go mod download $(CONTEXTQ_MODULE)@$(CONTEXTQ_VERSION); \
+		cd "$(GOMODCACHE)/$(CONTEXTQ_MODULE)@$(CONTEXTQ_VERSION)" && CGO_ENABLED=0 GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOCACHE=$(GOCACHE) GOMODCACHE=$(GOMODCACHE) go build -buildvcs=false -trimpath -gcflags='$(RELEASE_GCFLAGS)' -ldflags='-s -w -buildid=' -o $(abspath $(REMOTE_DIST))/contextq ./cmd/contextq; \
 	fi
 	cp LICENSE $(REMOTE_DIST)/CONTEXTQ_SERVER_LICENSE
 	cp licenses/contextq-LICENSE $(REMOTE_DIST)/CONTEXTQ_LICENSE
