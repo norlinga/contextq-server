@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-27
+
 ### Added
 
 - Namespace-scoped HTTP execution of the contextq CLI.
@@ -23,4 +25,5 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CI, race detection, vulnerability scanning, CodeQL, and dependency updates.
 - Installation, configuration, feature, API, operations, and security documentation.
 
-[Unreleased]: https://github.com/norlinga/contextq-server/commits/main
+[Unreleased]: https://github.com/norlinga/contextq-server/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/norlinga/contextq-server/releases/tag/v0.1.0
