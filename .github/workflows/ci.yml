@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go ${{ matrix.go }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.24.x", "stable"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+      - name: Formatting
+        run: test -z "$(gofmt -l cmd internal)"
+      - name: Module files
+        run: go mod tidy -diff
+      - name: Tests
+        run: go test ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Install pinned contextq
+        run: GOBIN="$RUNNER_TEMP/bin" go install "github.com/norlinga/contextq/cmd/contextq@$(cat CONTEXTQ_VERSION)"
+      - name: Real contextq integration
+        run: CONTEXTQ_INTEGRATION_BINARY="$RUNNER_TEMP/bin/contextq" go test ./internal/api -run TestContextqIntegration -count=1
+
+  race:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: .go-version
+          cache: true
+      - run: go test -race ./...
+
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: .go-version
+          cache: true
+      - run: GOBIN="$RUNNER_TEMP/bin" go install golang.org/x/vuln/cmd/govulncheck@v1.5.0
+      - run: |
+          "$RUNNER_TEMP/bin/govulncheck" ./...
+
+  release-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: .go-version
+          cache: true
+      - run: make release TARGET_GOARCH=${{ matrix.arch }}
+      - run: tar -tzf dist/contextq-linux-${{ matrix.arch }}.tar.gz

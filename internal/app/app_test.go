@@ -62,6 +62,23 @@ func TestKeyAddRequiresLabel(t *testing.T) {
 	}
 }
 
+func TestVersionCommand(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	exit := Run(context.Background(), []string{"version", "--json"}, &stdout, &stderr)
+	if exit != 0 {
+		t.Fatalf("exit=%d stderr=%s", exit, stderr.String())
+	}
+	var info map[string]string
+	if err := json.Unmarshal(stdout.Bytes(), &info); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"version", "commit", "build_date", "go_version", "contextq_version"} {
+		if info[field] == "" {
+			t.Errorf("missing %s in %v", field, info)
+		}
+	}
+}
+
 func TestTargetAndRemoteExecCommands(t *testing.T) {
 	var received struct {
 		Authorization string

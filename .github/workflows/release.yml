@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: .go-version
+          cache: true
+      - name: Validate tag source
+        run: |
+          test "$(git rev-parse "$GITHUB_REF_NAME^{commit}")" = "$GITHUB_SHA"
+          go mod tidy -diff
+          go test ./...
+          go vet ./...
+      - name: Build release assets
+        run: sh scripts/release.sh "$GITHUB_REF_NAME"
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/release/*
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/release/* \
+            --verify-tag \
+            --generate-notes \
+            --title "$GITHUB_REF_NAME"

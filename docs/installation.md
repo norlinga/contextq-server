@@ -4,6 +4,18 @@ This guide installs contextq-server behind an existing Caddy service on a Linux 
 The bootstrap expects systemd, Caddy, root SSH access, and a DNS record already
 pointing at the VPS.
 
+## Supported environment
+
+- Local controller: Linux or macOS, amd64 or arm64
+- Remote service: Linux, amd64 or arm64
+- Init system: systemd
+- Host tools: OpenSSH, `useradd`, `groupadd`, `runuser`, GNU `install`, and Caddy
+- Caddy layout: a writable `/etc/caddy/Caddyfile` managed by `caddy.service`
+
+The bootstrap has been exercised on the maintainer's VPS. Other systemd
+distributions should work when they provide the listed commands, but should be
+treated as unverified until `doctor` passes.
+
 ## Resulting host layout
 
 The default installation creates:
@@ -38,13 +50,34 @@ Caddy must be able to resolve the name publicly to obtain a TLS certificate.
 
 ## 2. Build the controller and deployment binaries
 
-Keep the two source repositories adjacent:
+### From a GitHub release
 
-```text
-work/
-  contextq/
-  contextq-server/
+Download one controller archive for the local operating system and architecture,
+plus the Linux bundle matching the VPS. For an amd64 Linux workstation and server:
+
+```sh
+mkdir contextq-release
+cd contextq-release
+
+gh release download --repo norlinga/contextq-server \
+  --pattern 'contextq-server_*_linux_amd64.tar.gz' \
+  --pattern 'contextq-bundle_*_linux_amd64.tar.gz' \
+  --pattern SHA256SUMS \
+  --pattern SBOM.spdx.json
+
+sha256sum --check SHA256SUMS --ignore-missing
+tar -xzf contextq-server_*_linux_amd64.tar.gz
+mkdir -p linux-amd64
+tar -C linux-amd64 -xzf contextq-bundle_*_linux_amd64.tar.gz
 ```
+
+Use `darwin_amd64` or `darwin_arm64` for a macOS controller. The VPS bundle remains
+`linux_amd64` or `linux_arm64`.
+
+### From source
+
+Go 1.24 or newer is required. Official release binaries use the exact security-
+patched toolchain recorded in `.go-version`.
 
 Confirm the VPS architecture:
 
@@ -72,6 +105,16 @@ dist/SHA256SUMS
 
 `remote-init` also asks the VPS for `uname -m` and refuses to upload a mismatched
 ELF binary.
+
+The bundled contextq version is pinned in `CONTEXTQ_VERSION` and fetched through the
+Go module proxy. Developers working offline can set `CONTEXTQ_SOURCE` to an exact
+local checkout of that version when invoking `make release`.
+
+Confirm the controller metadata:
+
+```sh
+dist/contextq-server version
+```
 
 ## 3. Add a local target
 

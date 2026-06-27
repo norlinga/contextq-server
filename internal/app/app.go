@@ -32,6 +32,8 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	switch args[0] {
 	case "serve":
 		err = runServe(ctx, args[1:], stdout, stderr)
+	case "version":
+		err = runVersion(args[1:], stdout, stderr)
 	case "target":
 		err = runTarget(args[1:], stdout, stderr)
 	case "remote-init":
@@ -303,6 +305,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   contextq-server serve [flags]
+  contextq-server version [--json]
   contextq-server target <add|list|use|remove> [flags]
   contextq-server remote-init [-t target] [--apply] [flags]
   contextq-server remote namespace init [-t target]

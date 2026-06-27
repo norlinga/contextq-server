@@ -18,6 +18,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/norlinga/contextq-server/internal/buildinfo"
 	"github.com/norlinga/contextq-server/internal/namespace"
 	"github.com/norlinga/contextq-server/internal/remote"
 	"github.com/norlinga/contextq-server/internal/setup"
@@ -465,6 +466,18 @@ func runDoctor(ctx context.Context, args []string, stdout, stderr io.Writer) err
 	}, " && ")
 	_, filesErr := remote.RunSSH(ctx, executor, sshTarget, filesCommand, nil)
 	check("remote files", filesErr, "binaries and data root present")
+	versionCommand := remote.ShellCommand(resolved.Target.RemoteBin, "version", "--json")
+	versionResult, versionErr := remote.RunSSH(ctx, executor, sshTarget, versionCommand, nil)
+	versionDetail := ""
+	if versionErr == nil {
+		var info buildinfo.Info
+		if err := json.Unmarshal(versionResult.Stdout, &info); err != nil {
+			versionErr = fmt.Errorf("parse version output: %w", err)
+		} else {
+			versionDetail = info.Version + " (contextq " + info.ContextqVersion + ")"
+		}
+	}
+	check("remote version", versionErr, versionDetail)
 	caddyCommand := remote.ShellCommand("caddy", "validate", "--config", resolved.Target.Caddyfile)
 	_, caddyErr := remote.RunSSH(ctx, executor, sshTarget, caddyCommand, nil)
 	check("Caddy config", caddyErr, resolved.Target.Caddyfile+" valid")

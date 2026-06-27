@@ -1,5 +1,8 @@
 # contextq-server
 
+[![CI](https://github.com/norlinga/contextq-server/actions/workflows/ci.yml/badge.svg)](https://github.com/norlinga/contextq-server/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/norlinga/contextq-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/norlinga/contextq-server/actions/workflows/codeql.yml)
+
 `contextq-server` makes local [contextq](https://github.com/norlinga/contextq)
 queues available to agents and automation running on other machines.
 
@@ -22,6 +25,9 @@ contextq-server
 
 There is no database, daemon protocol, scheduler, worker framework, or public
 administration API.
+
+> **Status:** early `v0` software. The command and deployment contracts may change
+> before `v1.0.0`. Back up `/var/contextq` before upgrades.
 
 ## Why it exists
 
@@ -53,15 +59,9 @@ See [Features](docs/features.md) for the complete boundary and deliberate omissi
 
 ## Quick start
 
-The repositories should be adjacent so the release target can build both binaries:
-
-```text
-work/
-  contextq/
-  contextq-server/
-```
-
-From `contextq-server`:
+Download the local controller and matching Linux server bundle from the
+[latest release](https://github.com/norlinga/contextq-server/releases/latest), or
+build them from source:
 
 ```sh
 # Build a local controller and the Linux deployment bundle.
@@ -89,6 +89,15 @@ dist/contextq-server exec -t production queue list
 The local target file is `~/.contextq-server` and is mode `0600` because it contains
 the API key.
 
+Release builds fetch the contextq version pinned in `CONTEXTQ_VERSION`; they do not
+depend on an arbitrary sibling checkout.
+
+Inspect build identity at any time:
+
+```sh
+contextq-server version
+```
+
 ## Example workflow
 
 ```sh
@@ -111,6 +120,11 @@ returns its JSON result.
 - [Targets, namespaces, keys, and queues](docs/configuration.md)
 - [Feature set and scope](docs/features.md)
 - [HTTP API](docs/api.md)
+- [Operations, backup, upgrade, and removal](docs/operations.md)
+- [Security model](docs/security.md)
+- [Security reporting policy](SECURITY.md)
+- [Release process](docs/releasing.md)
+- [Changelog](CHANGELOG.md)
 
 The canonical contextq lifecycle and CLI specification remain in the
 [contextq repository](https://github.com/norlinga/contextq). Agents should follow
@@ -140,3 +154,8 @@ make release
 Tests cover namespace and key behavior, command validation, HTTP behavior,
 concurrent key changes, generated shell syntax, SSH command construction, race
 detection, and integration with the real contextq binary.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Binary bundles also contain the pinned contextq license
+and notices for its linked dependencies.
