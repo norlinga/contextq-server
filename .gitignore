@@ -1,0 +1,42 @@
+# Compiled binaries and release bundles
+/bin/
+/dist/
+
+# Local contextq-server credentials and target configuration
+/.contextq-server
+/.contextq-server.*
+/.env
+/.env.*
+!/.env.example
+
+# Local queue/runtime data
+/contextq/
+/contextq-data/
+/.contextq-data/
+/tmp/
+
+# Generated bootstrap scripts
+/contextq-remote-init.sh
+/remote-init.sh
+
+# Go test, coverage, and profiling output
+*.test
+coverage.out
+*.coverprofile
+*.prof
+*.pprof
+
+# Local agent/workspace state
+/.agents/
+/.codex/
+
+# Editor and operating-system files
+/.idea/
+/.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Local logs
+*.log
